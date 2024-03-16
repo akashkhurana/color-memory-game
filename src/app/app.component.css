@@ -1,0 +1,16 @@
+.main-container-grid {
+    width: 60%;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+
+.grid-item {
+    height: 200px;
+    border: 1px solid black;
+    margin-left: 10px;
+}
+
+.disable-click {
+    pointer-events: none !important;
+}

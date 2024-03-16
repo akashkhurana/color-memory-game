@@ -1,0 +1,15 @@
+<!-- [ngClass]="disableClick ? 'disable-click' : ''" -->
+
+<div class="main-container-grid">
+    @for(item of randomOrderedArray; track item.color; let idx = $index) {
+    <div class="grid-item" [ngStyle]="{ 'background-color': item.value ? item.color : ''}" (click)="onClickOfBox(idx)"></div>
+    }
+</div>
+
+<!-- <div class="main-container-grid" [ngClass]="disableClick ? 'disable-click' : ''"></div>
+    <div class="grid-column" *ngFor="let data of allData; let i=index">
+        <ng-container *ngFor="let item of data, let j=index">
+            <div class="grid-item" *ngIf="item" (click)="markAsSelected(i, j)" [ngClass]="item===2 ? 'green-bg': ''"></div>
+        </ng-container>
+    </div>
+</div> -->
