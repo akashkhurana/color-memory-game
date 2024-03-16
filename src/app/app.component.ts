@@ -10,37 +10,84 @@ import { RouterModule, RouterOutlet } from '@angular/router';
   styleUrl: './app.component.css'
 })
 export class AppComponent {
-  colors = ['#FF0055', '#33FF57', '#3357FF', '#FFD700', '#FF33FF', '#00FFFF'];
-  randomOrderedArray: { color: string; revealed: boolean; matched: boolean }[] = [];
+  themes = {
+    colors: ['#FF0055', '#33FF57', '#3357FF', '#FFD700', '#FF33FF', '#00FFFF'],
+    emojis: ['🎮', '🚀', '🌈', '💎', '🔥', '⚡'],
+    cyber: ['◈', '⬡', '⌬', '⏣', '⎔', '✦'],
+    abstract: ['●', '▲', '■', '◆', '★', '✚']
+  };
+
+  currentTheme: keyof typeof this.themes = 'colors';
+  randomOrderedArray: { content: string; revealed: boolean; matched: boolean }[] = [];
   
   firstSelection: number | null = null;
   secondSelection: number | null = null;
   isProcessing = false;
+  isPreloading = true;
+  
   moves = 0;
   matches = 0;
+  seconds = 60; // Start with 60 seconds
+  timerInterval: any;
+  isLowTime = false;
+
+  bestMoves = Number(localStorage.getItem('bestMoves')) || 0;
+  bestTime = Number(localStorage.getItem('bestTime')) || 0;
 
   constructor() {
     this.initGame();
   }
 
+  setTheme(themeName: string) {
+    this.currentTheme = themeName as keyof typeof this.themes;
+    this.initGame();
+  }
+
   initGame() {
-    const doubledColors = [...this.colors, ...this.colors];
-    this.randomOrderedArray = doubledColors
+    this.isPreloading = true;
+    this.stopTimer();
+    this.seconds = 60;
+    this.isLowTime = false;
+    
+    const items = this.themes[this.currentTheme];
+    const doubled = [...items, ...items];
+    this.randomOrderedArray = doubled
       .sort(() => Math.random() - 0.5)
-      .map(color => ({ color, revealed: false, matched: false }));
+      .map(content => ({ content, revealed: false, matched: false }));
+    
     this.moves = 0;
     this.matches = 0;
     this.firstSelection = null;
     this.secondSelection = null;
     this.isProcessing = false;
+
+    // Simulate preloader delay
+    setTimeout(() => this.isPreloading = false, 800);
+  }
+
+  startTimer() {
+    if (this.timerInterval) return;
+    this.timerInterval = setInterval(() => {
+      this.seconds--;
+      if (this.seconds <= 10) this.isLowTime = true;
+      if (this.seconds <= 0) {
+        this.stopTimer();
+        this.handleWin(); // Or handleLoss
+      }
+    }, 1000);
+  }
+
+  stopTimer() {
+    clearInterval(this.timerInterval);
+    this.timerInterval = null;
   }
 
   onClickOfBox(index: number): void {
     const selected = this.randomOrderedArray[index];
+    if (this.isProcessing || selected.revealed || selected.matched || index === this.firstSelection) return;
 
-    // Prevent clicking if processing, or if tile is already revealed/matched
-    if (this.isProcessing || selected.revealed || selected.matched || index === this.firstSelection) {
-      return;
+    if (this.moves === 0 && this.firstSelection === null) {
+      this.startTimer();
     }
 
     selected.revealed = true;
@@ -58,14 +105,14 @@ export class AppComponent {
     const first = this.randomOrderedArray[this.firstSelection!];
     const second = this.randomOrderedArray[this.secondSelection!];
 
-    if (first.color === second.color) {
+    if (first.content === second.content) {
       first.matched = true;
       second.matched = true;
       this.matches++;
       this.resetSelections();
       
-      if (this.matches === this.colors.length) {
-        // Game Over logic could go here
+      if (this.matches === this.randomOrderedArray.length / 2) {
+        this.handleWin();
       }
     } else {
       this.isProcessing = true;
@@ -76,6 +123,24 @@ export class AppComponent {
         this.isProcessing = false;
       }, 1000);
     }
+  }
+
+  handleWin() {
+    this.stopTimer();
+    if (!this.bestMoves || this.moves < this.bestMoves) {
+      this.bestMoves = this.moves;
+      localStorage.setItem('bestMoves', String(this.moves));
+    }
+    if (!this.bestTime || this.seconds < this.bestTime) {
+      this.bestTime = this.seconds;
+      localStorage.setItem('bestTime', String(this.seconds));
+    }
+  }
+
+  formatTime(s: number): string {
+    const mins = Math.floor(s / 60);
+    const secs = s % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   }
 
   resetSelections(): void {

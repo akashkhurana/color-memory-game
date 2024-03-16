@@ -1,33 +1,52 @@
-<div class="game-wrapper">
+<div class="game-wrapper" [class.shakes]="isLowTime">
     <header class="game-header">
         <div class="header-left">
             <h1 class="logo">Color<span>Memory</span></h1>
-            <p class="instruction">Find all matching pairs to win!</p>
+            <div class="theme-switcher">
+                <button [class.active]="currentTheme === 'colors'" (click)="setTheme('colors')">Colors</button>
+                <button [class.active]="currentTheme === 'emojis'" (click)="setTheme('emojis')">Emoji</button>
+                <button [class.active]="currentTheme === 'cyber'" (click)="setTheme('cyber')">Cyber</button>
+                <button [class.active]="currentTheme === 'abstract'" (click)="setTheme('abstract')">Abstract</button>
+            </div>
         </div>
         <div class="stats">
+            <div class="stat-box">
+                <span class="label">Time</span>
+                <span class="value">{{formatTime(seconds)}}</span>
+            </div>
             <div class="stat-box">
                 <span class="label">Moves</span>
                 <span class="value">{{moves}}</span>
             </div>
-            <div class="stat-box">
-                <span class="label">Matches</span>
-                <span class="value">{{matches}} / {{colors.length}}</span>
+            <div class="stat-box high-score">
+                <span class="label">Best</span>
+                <span class="value">{{bestMoves > 0 ? bestMoves : '--'}} / {{bestTime > 0 ? formatTime(bestTime) : '--'}}</span>
             </div>
         </div>
-        <button class="reset-btn" (click)="initGame()">Reset Game</button>
+        <button class="reset-btn" (click)="initGame()">Reset</button>
     </header>
 
     <div class="main-content">
-        @if (matches < colors.length) {
+        @if (isPreloading) {
+            <div class="grid-preloader">
+                <div class="pulse-ring"></div>
+                <p>Initializing Game Deck...</p>
+            </div>
+        } @else if (matches < randomOrderedArray.length / 2) {
         <div class="main-container-grid">
             @for(item of randomOrderedArray; track $index) {
             <div class="grid-item" 
                  [class.revealed]="item.revealed" 
                  [class.matched]="item.matched"
+                 [style.animation-delay]="$index * 50 + 'ms'"
                  (click)="onClickOfBox($index)">
                  <div class="tile-inner">
                      <div class="tile-front"></div>
-                     <div class="tile-back" [style.background-color]="item.color"></div>
+                     <div class="tile-back" [style.background-color]="currentTheme === 'colors' ? item.content : ''">
+                         @if (currentTheme !== 'colors') {
+                             <span class="theme-icon">{{item.content}}</span>
+                         }
+                     </div>
                  </div>
             </div>
             }
@@ -40,11 +59,15 @@
                 <p>You mastered the board in <strong>{{moves}}</strong> moves!</p>
                 <div class="final-stats">
                     <div class="stat-item">
+                        <span class="label">Time</span>
+                        <span class="value">{{formatTime(seconds)}}</span>
+                    </div>
+                    <div class="stat-item">
                         <span class="label">Efficiency</span>
-                        <span class="value">{{(colors.length / moves * 100).toFixed(0)}}%</span>
+                        <span class="value">{{( (randomOrderedArray.length / 2) / (moves || 1) * 100).toFixed(0)}}%</span>
                     </div>
                 </div>
-                <button class="primary-btn" (click)="initGame()">Launch New Round</button>
+                <button class="primary-btn" (click)="initGame()">New Round</button>
             </div>
         </div>
         }
